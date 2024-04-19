@@ -35,11 +35,7 @@ class LoyaltyPointsController extends Controller
 
         $transaction = $repo->performPaymentLoyaltyPoints(
             $account->id,
-            $request->request('loyalty_points_rule'),
-            $request->request('description'),
-            $request->request('payment_id'),
-            $request->request('payment_amount'),
-            $request->request('payment_time'),
+            $request->only(['loyalty_points_rule', 'description', 'payment_id', 'payment_amount', 'payment_time']),
         );
         Log::info($transaction);
 
