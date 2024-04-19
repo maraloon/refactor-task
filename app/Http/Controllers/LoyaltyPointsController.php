@@ -7,16 +7,18 @@ use App\Http\Requests\LoyaltyPointsDepositRequest;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyPointsTransaction;
 use App\Repositories\LoyaltyPointsTransactionRepository;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class LoyaltyPointsController extends Controller
 {
-    public function deposit(LoyaltyPointsDepositRequest $request, LoyaltyPointsTransactionRepository $repo)
-    {
-        $data = $_POST;
+    public function deposit(
+        LoyaltyPointsDepositRequest $request,
+        LoyaltyPointsTransactionRepository $repo
+    ): JsonResponse {
 
-        Log::info('Deposit transaction input: ' . print_r($data, true));
+        Log::info('Deposit transaction input: ' . print_r($request->toArray(), true));
 
         $type = $request->request('account_type');
         $id = $request->request('account_id');
@@ -33,11 +35,12 @@ class LoyaltyPointsController extends Controller
 
         $transaction = $repo->performPaymentLoyaltyPoints(
             $account->id,
-            $data['loyalty_points_rule'],
-            $data['description'],
-            $data['payment_id'],
-            $data['payment_amount'],
-            $data['payment_time']);
+            $request->request('loyalty_points_rule'),
+            $request->request('description'),
+            $request->request('payment_id'),
+            $request->request('payment_amount'),
+            $request->request('payment_time'),
+        );
         Log::info($transaction);
 
         if ($account->email != '' && $account->email_notification) {
@@ -49,7 +52,7 @@ class LoyaltyPointsController extends Controller
             Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
         }
 
-        return $transaction;
+        return response()->json($transaction);
     }
 
     public function cancel()
