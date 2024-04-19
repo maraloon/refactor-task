@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoyaltyPointsRequest;
 use App\Mail\LoyaltyPointsReceived;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyPointsTransaction;
@@ -10,38 +11,34 @@ use Illuminate\Support\Facades\Mail;
 
 class LoyaltyPointsController extends Controller
 {
-    public function deposit()
+    public function deposit(LoyaltyPointsRequest $request)
     {
         $data = $_POST;
 
         Log::info('Deposit transaction input: ' . print_r($data, true));
 
-        $type = $data['account_type'];
-        $id = $data['account_id'];
-        if (($type == 'phone' || $type == 'card' || $type == 'email') && $id != '') {
-            if ($account = LoyaltyAccount::where($type, '=', $id)->first()) {
-                if ($account->active) {
-                    $transaction =  LoyaltyPointsTransaction::performPaymentLoyaltyPoints($account->id, $data['loyalty_points_rule'], $data['description'], $data['payment_id'], $data['payment_amount'], $data['payment_time']);
-                    Log::info($transaction);
-                    if ($account->email != '' && $account->email_notification) {
-                        Mail::to($account)->send(new LoyaltyPointsReceived($transaction->points_amount, $account->getBalance()));
-                    }
-                    if ($account->phone != '' && $account->phone_notification) {
-                        // instead SMS component
-                        Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
-                    }
-                    return $transaction;
-                } else {
-                    Log::info('Account is not active');
-                    return response()->json(['message' => 'Account is not active'], 400);
+        $type = $request->request('account_type');
+        $id = $request->request('account_id');
+
+        if ($account = LoyaltyAccount::where($type, '=', $id)->first()) {
+            if ($account->active) {
+                $transaction =  LoyaltyPointsTransaction::performPaymentLoyaltyPoints($account->id, $data['loyalty_points_rule'], $data['description'], $data['payment_id'], $data['payment_amount'], $data['payment_time']);
+                Log::info($transaction);
+                if ($account->email != '' && $account->email_notification) {
+                    Mail::to($account)->send(new LoyaltyPointsReceived($transaction->points_amount, $account->getBalance()));
                 }
+                if ($account->phone != '' && $account->phone_notification) {
+                    // instead SMS component
+                    Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
+                }
+                return $transaction;
             } else {
-                Log::info('Account is not found');
-                return response()->json(['message' => 'Account is not found'], 400);
+                Log::info('Account is not active');
+                return response()->json(['message' => 'Account is not active'], 400);
             }
         } else {
-            Log::info('Wrong account parameters');
-            throw new \InvalidArgumentException('Wrong account parameters');
+            Log::info('Account is not found');
+            return response()->json(['message' => 'Account is not found'], 400);
         }
     }
 
