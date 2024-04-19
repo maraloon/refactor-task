@@ -13,22 +13,12 @@ class LoyaltyPointsReceived extends Mailable
     private $balance;
     private $pointsAmount;
 
-    /**
-     * Create a new message instance.
-     *
-     * @return void
-     */
     public function __construct($pointsAmount, $balance)
     {
         $this->balance = $balance;
         $this->pointsAmount = $pointsAmount;
     }
 
-    /**
-     * Build the message.
-     *
-     * @return $this
-     */
     public function build()
     {
         return $this->view('emails.loyaltyPointsReceived')->with([

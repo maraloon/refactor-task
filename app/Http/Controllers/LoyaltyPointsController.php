@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\LoyaltyPointsReceived;
 use App\Http\Requests\LoyaltyPointsDepositRequest;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyPointsTransaction;
 use App\Repositories\LoyaltyPointsTransactionRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class LoyaltyPointsController extends Controller
 {
@@ -23,10 +21,12 @@ class LoyaltyPointsController extends Controller
         $type = $request->request('account_type');
         $id = $request->request('account_id');
 
-        $account = LoyaltyAccount::query()->where($type, '=', $id)->firstOr(function () {
-            Log::info('Account is not found');
-            return response()->json(['message' => 'Account is not found'], 400);
-        });
+        $account = LoyaltyAccount::query()
+            ->where($type, $id)
+            ->firstOr(function () {
+                Log::info('Account is not found');
+                return response()->json(['message' => 'Account is not found'], 400);
+            });
 
         if (!$account->active) {
             Log::info('Account is not active');
@@ -43,14 +43,7 @@ class LoyaltyPointsController extends Controller
         );
         Log::info($transaction);
 
-        if ($account->email != '' && $account->email_notification) {
-            Mail::to($account)->send(new LoyaltyPointsReceived($transaction->points_amount, $account->getBalance()));
-        }
-
-        if ($account->phone != '' && $account->phone_notification) {
-            // instead SMS component
-            Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
-        }
+        $account->notifyPointsReceived($transaction->points_amount);
 
         return response()->json($transaction);
     }
