@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\LoyaltyPointsRequest;
 use App\Mail\LoyaltyPointsReceived;
+use App\Http\Requests\LoyaltyPointsDepositRequest;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyPointsTransaction;
+use App\Repositories\LoyaltyPointsTransactionRepository;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class LoyaltyPointsController extends Controller
 {
-    public function deposit(LoyaltyPointsRequest $request)
+    public function deposit(LoyaltyPointsDepositRequest $request, LoyaltyPointsTransactionRepository $repo)
     {
         $data = $_POST;
 
@@ -30,15 +31,24 @@ class LoyaltyPointsController extends Controller
             return response()->json(['message' => 'Account is not active'], 400);
         }
 
-        $transaction =  LoyaltyPointsTransaction::performPaymentLoyaltyPoints($account->id, $data['loyalty_points_rule'], $data['description'], $data['payment_id'], $data['payment_amount'], $data['payment_time']);
+        $transaction = $repo->performPaymentLoyaltyPoints(
+            $account->id,
+            $data['loyalty_points_rule'],
+            $data['description'],
+            $data['payment_id'],
+            $data['payment_amount'],
+            $data['payment_time']);
         Log::info($transaction);
+
         if ($account->email != '' && $account->email_notification) {
             Mail::to($account)->send(new LoyaltyPointsReceived($transaction->points_amount, $account->getBalance()));
         }
+
         if ($account->phone != '' && $account->phone_notification) {
             // instead SMS component
             Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
         }
+
         return $transaction;
     }
 
@@ -61,7 +71,7 @@ class LoyaltyPointsController extends Controller
         }
     }
 
-    public function withdraw()
+    public function withdraw(LoyaltyPointsTransactionRepository $repo)
     {
         $data = $_POST;
 
@@ -81,7 +91,7 @@ class LoyaltyPointsController extends Controller
                         return response()->json(['message' => 'Insufficient funds'], 400);
                     }
 
-                    $transaction = LoyaltyPointsTransaction::withdrawLoyaltyPoints($account->id, $data['points_amount'], $data['description']);
+                    $transaction = $repo->withdrawLoyaltyPoints($account->id, $data['points_amount'], $data['description']);
                     Log::info($transaction);
                     return $transaction;
                 } else {
