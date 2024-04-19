@@ -20,26 +20,26 @@ class LoyaltyPointsController extends Controller
         $type = $request->request('account_type');
         $id = $request->request('account_id');
 
-        if ($account = LoyaltyAccount::where($type, '=', $id)->first()) {
-            if ($account->active) {
-                $transaction =  LoyaltyPointsTransaction::performPaymentLoyaltyPoints($account->id, $data['loyalty_points_rule'], $data['description'], $data['payment_id'], $data['payment_amount'], $data['payment_time']);
-                Log::info($transaction);
-                if ($account->email != '' && $account->email_notification) {
-                    Mail::to($account)->send(new LoyaltyPointsReceived($transaction->points_amount, $account->getBalance()));
-                }
-                if ($account->phone != '' && $account->phone_notification) {
-                    // instead SMS component
-                    Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
-                }
-                return $transaction;
-            } else {
-                Log::info('Account is not active');
-                return response()->json(['message' => 'Account is not active'], 400);
-            }
-        } else {
+        $account = LoyaltyAccount::query()->where($type, '=', $id)->firstOr(function () {
             Log::info('Account is not found');
             return response()->json(['message' => 'Account is not found'], 400);
+        });
+
+        if (!$account->active) {
+            Log::info('Account is not active');
+            return response()->json(['message' => 'Account is not active'], 400);
         }
+
+        $transaction =  LoyaltyPointsTransaction::performPaymentLoyaltyPoints($account->id, $data['loyalty_points_rule'], $data['description'], $data['payment_id'], $data['payment_amount'], $data['payment_time']);
+        Log::info($transaction);
+        if ($account->email != '' && $account->email_notification) {
+            Mail::to($account)->send(new LoyaltyPointsReceived($transaction->points_amount, $account->getBalance()));
+        }
+        if ($account->phone != '' && $account->phone_notification) {
+            // instead SMS component
+            Log::info('You received' . $transaction->points_amount . 'Your balance' . $account->getBalance());
+        }
+        return $transaction;
     }
 
     public function cancel()
