@@ -29,7 +29,7 @@ class LoyaltyPointsTransactionRepository
         ]);
     }
 
-    public function withdrawLoyaltyPoints($account_id, $points_amount, $description)
+    public function withdrawLoyaltyPoints(string $account_id, float $points_amount, string $description): LoyaltyPointsTransaction
     {
         return LoyaltyPointsTransaction::create([
             'account_id' => $account_id,
