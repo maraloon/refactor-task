@@ -8,6 +8,7 @@ use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyPointsTransaction;
 use App\Repositories\LoyaltyPointsTransactionRepository;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class LoyaltyPointsController extends Controller
@@ -19,20 +20,7 @@ class LoyaltyPointsController extends Controller
 
         Log::info('Deposit transaction input: ' . print_r($request->toArray(), true));
 
-        $type = $request->request('account_type');
-        $id = $request->request('account_id');
-
-        $account = LoyaltyAccount::query()
-            ->where($type, $id)
-            ->firstOr(function () {
-                Log::info('Account is not found');
-                return response()->json(['message' => 'Account is not found'], 400);
-            });
-
-        if (!$account->active) {
-            Log::info('Account is not active');
-            return response()->json(['message' => 'Account is not active'], 400);
-        }
+        $account = $this->account($request);
 
         $transaction = $repo->performPaymentLoyaltyPoints(
             $account->id,
@@ -71,20 +59,7 @@ class LoyaltyPointsController extends Controller
 
         Log::info('Withdraw loyalty points transaction input: ' . print_r($request->toArray(), true));
 
-        $type = $request->request('account_type');
-        $id = $request->request('account_id');
-
-        $account = LoyaltyAccount::query()
-            ->where($type, $id)
-            ->firstOr(function () {
-                Log::info('Account is not found');
-                return response()->json(['message' => 'Account is not found'], 400);
-            });
-
-        if (!$account->active) {
-            Log::info('Account is not active');
-            return response()->json(['message' => 'Account is not active'], 400);
-        }
+        $account = $this->account($request);
 
         $points_amount = $request->request('points_amount');
         if ($request->request('points_amount') <= 0) {
@@ -105,5 +80,25 @@ class LoyaltyPointsController extends Controller
         Log::info($transaction);
 
         return response()->json($transaction);
+    }
+
+    protected function account(Request $request): LoyaltyAccount
+    {
+        $type = $request->request('account_type');
+        $id = $request->request('account_id');
+
+        $account = LoyaltyAccount::query()
+            ->where($type, $id)
+            ->firstOr(function () {
+                Log::info('Account is not found');
+                return response()->json(['message' => 'Account is not found'], 400);
+            });
+
+        if (!$account->active) {
+            Log::info('Account is not active');
+            return response()->json(['message' => 'Account is not active'], 400);
+        }
+
+        return $account;
     }
 }
