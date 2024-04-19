@@ -21,15 +21,21 @@ RUN apk add zlib-dev libzip-dev freetype-dev libxml2-dev \
 
 
 # Install composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN curl -sS https://getcomposer.org/installer | php -- \
         --filename=composer \
         --install-dir=/usr/local/bin && \
         echo "alias composer='composer'" >> /root/.bashrc && \
         composer
 
-RUN addgroup -S www && adduser -S www -G www
+ARG UID
+ARG GID
+ENV UID=${UID}
+ENV GID=${GID}
 
-# Change current user to www
-USER www
+RUN addgroup -g ${GID} --system outer
+RUN adduser -G outer --system -D -s /bin/sh -u ${UID} outer
+RUN sed -i "s/user = www-data/user = outer/g" /usr/local/etc/php-fpm.d/www.conf
+RUN sed -i "s/group = www-data/group = outer/g" /usr/local/etc/php-fpm.d/www.conf
 
 CMD ["php", "artisan", "serve", "--host", "0.0.0.0"]

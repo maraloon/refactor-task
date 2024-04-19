@@ -34,11 +34,11 @@
 - Windows
 ```bash
 cd test-task-loyalty-service; docker-compose up
-docker run -it --user www -v ${pwd}:/var/www test-task-loyalty-service /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
+docker run -it --user www -v ${pwd}:/var/www refactor-task-api /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
 ```
 
 - Linux
 ```bash
-cd test-task-loyalty-service && docker-compose up
-docker run -it --user www -v $PWD:/var/www test-task-loyalty-service /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
+docker-compose up
+docker run -it -u "$(id -u):$(id -g)" -v $PWD:/var/www refactor-task-api /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
 ```
