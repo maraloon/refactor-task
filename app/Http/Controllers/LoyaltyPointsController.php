@@ -56,13 +56,11 @@ class LoyaltyPointsController extends Controller
 
         $points_amount = $request->request('points_amount');
         if ($points_amount <= 0) {
-            Log::info('Wrong loyalty points amount: ' . $points_amount);
-            return response()->json(['message' => 'Wrong loyalty points amount'], 400);
+            return response()->error('Wrong loyalty points amount: ' . $points_amount);
         }
 
         if ($account->getBalance() < $points_amount) {
-            Log::info('Insufficient funds: ' . $points_amount);
-            return response()->json(['message' => 'Insufficient funds'], 400);
+            return response()->error('Insufficient funds: ' . $points_amount);
         }
 
         $transaction = $repo->withdrawLoyaltyPoints(
@@ -83,13 +81,11 @@ class LoyaltyPointsController extends Controller
         $account = LoyaltyAccount::query()
             ->where($type, $id)
             ->firstOr(function () {
-                Log::info('Account is not found');
-                return response()->json(['message' => 'Account is not found'], 400);
+                return response()->error('Account is not found');
             });
 
         if (!$account->active) {
-            Log::info('Account is not active');
-            return response()->json(['message' => 'Account is not active'], 400);
+            return response()->error('Account is not active');
         }
 
         return $account;
