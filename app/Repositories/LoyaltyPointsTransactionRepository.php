@@ -38,4 +38,20 @@ class LoyaltyPointsTransactionRepository
             'description' => $description,
         ]);
     }
+
+    public function cancelTransaction(int $id, string $reason): LoyaltyPointsTransaction
+    {
+
+        $transaction = LoyaltyPointsTransaction::query()
+            ->where('id', $id)
+            ->first();
+
+        if (!$transaction->canceled) {
+            $transaction->canceled = time();
+            $transaction->cancellation_reason = $reason;
+            $transaction->save();
+        }
+
+        return $transaction;
+    }
 }

@@ -17,11 +17,8 @@ class LoyaltyPointsWithdrawRequest extends FormRequest
         return [
             'account_type' => ['required', Rule::in(['phone', 'card', 'email'])],
             'account_id' => 'required',
-            'loyalty_points_rule' => 'exists:loyalty_points_rule,points_rule',
+            'points_amount' => 'required|number',
             'description' => 'required|string',
-            'payment_id' => 'string',
-            'payment_amount' => 'number',
-            'payment_time' => 'integer',
         ];
     }
 }

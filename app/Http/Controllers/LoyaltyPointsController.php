@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoyaltyPointsCancelRequest;
 use App\Http\Requests\LoyaltyPointsDepositRequest;
 use App\Http\Requests\LoyaltyPointsWithdrawRequest;
 use App\Models\LoyaltyAccount;
-use App\Models\LoyaltyPointsTransaction;
 use App\Repositories\LoyaltyPointsTransactionRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,23 +33,16 @@ class LoyaltyPointsController extends Controller
         return response()->json($transaction);
     }
 
-    public function cancel()
-    {
-        $data = $_POST;
+    public function cancel(
+        LoyaltyPointsCancelRequest $request,
+        LoyaltyPointsTransactionRepository $repo
+    ): JsonResponse {
+        $transaction = $repo->cancelTransaction(
+            $request->request('transaction_id'),
+            $request->request('cancellation_reason')
+        );
 
-        $reason = $data['cancellation_reason'];
-
-        if ($reason == '') {
-            return response()->json(['message' => 'Cancellation reason is not specified'], 400);
-        }
-
-        if ($transaction = LoyaltyPointsTransaction::where('id', '=', $data['transaction_id'])->where('canceled', '=', 0)->first()) {
-            $transaction->canceled = time();
-            $transaction->cancellation_reason = $reason;
-            $transaction->save();
-        } else {
-            return response()->json(['message' => 'Transaction is not found'], 400);
-        }
+        return response()->json($transaction);
     }
 
     public function withdraw(
@@ -62,7 +55,7 @@ class LoyaltyPointsController extends Controller
         $account = $this->account($request);
 
         $points_amount = $request->request('points_amount');
-        if ($request->request('points_amount') <= 0) {
+        if ($points_amount <= 0) {
             Log::info('Wrong loyalty points amount: ' . $points_amount);
             return response()->json(['message' => 'Wrong loyalty points amount'], 400);
         }
