@@ -29,16 +29,22 @@
 4. Не углубляться в детали реализации непринципиальных моментов.
 5. Не тратить на задание больше 1-2 дней.
 
+1. При рефакторинге код переписывался на использование того функционала, что уже есть в арсенале Laravel.
+Вместо работы с сырым $_POST берем Request, в котором данные уже отфильтрованы и мы можем не брать на себя задачу по экранированию и пр. Проверки входящих данных так-же отданы на Laravel'евский Validator.
+Вместо static методов в модели, был создан репозиторий, который в целом можно и статически вызывать и фасад использовать, но я предпочитаю Service Container и не ленюсь прокидывать зависимости в аргументах методов.
+Убраны вложенные if'ы - при меньшей вложенности проще читать. Убрано задание переменных внутри if'ов. Лично я это большим злом не считаю, но общепринято так не писать.
+Дублирование кода убрано в отдельные методы. Добавлен макрос для response - error(). С одной стороны хорошо сокращает код, с другой стороны добавилась не совсем очевидная магия
+
 ## Installation
 
 - Windows
 ```bash
 cd test-task-loyalty-service; docker-compose up
-docker run -it --user www -v ${pwd}:/var/www test-task-loyalty-service /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
+docker run -it --user www -v ${pwd}:/var/www refactor-task-api /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
 ```
 
 - Linux
 ```bash
-cd test-task-loyalty-service && docker-compose up
-docker run -it --user www -v $PWD:/var/www test-task-loyalty-service /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
+docker-compose up
+docker run -it -u "$(id -u):$(id -g)" -v $PWD:/var/www refactor-task-api /bin/sh -lc "composer install && cp .env.example .env && php artisan key:generate && php artisan migrate"
 ```

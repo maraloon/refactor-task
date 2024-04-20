@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Mail\AccountActivated;
 use App\Mail\AccountDeactivated;
+use App\Mail\LoyaltyPointsReceived;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -39,6 +40,19 @@ class LoyaltyAccount extends Model
         if ($this->phone != '' && $this->phone_notification) {
             // instead SMS component
             Log::info('Account: phone: ' . $this->phone . ' ' . ($this->active ? 'Activated' : 'Deactivated'));
+        }
+    }
+
+    public function notifyPointsReceived($points_amount)
+    {
+        if ($this->email != '' && $this->email_notification) {
+            Mail::to($this)
+                ->send(new LoyaltyPointsReceived($points_amount, $this->getBalance()));
+        }
+
+        if ($this->phone != '' && $this->phone_notification) {
+            // instead SMS component
+            Log::info('You received' . $points_amount . 'Your balance' . $this->getBalance());
         }
     }
 }
